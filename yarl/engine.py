@@ -16,9 +16,13 @@ class Engine(object):
         game_map: GameMap,
         player: Entity,
     ) -> None:
-        self.event_handler = event_handler
-        self.game_map = game_map
-        self.player = player
+        self.event_handler: EventHandler = event_handler
+        self.game_map: GameMap = game_map
+        self.player: Entity = player
+
+    def handle_enemy_turns(self) -> None:
+        for entity in self.game_map.entities - {self.player}:
+            print(f"The {entity.name} ponders life")
 
     def handle_events(self, events: Iterable[Any]) -> None:
         for event in events:
@@ -27,6 +31,7 @@ class Engine(object):
             if action is None:
                 continue
             action.perform(self, self.player)
+            self.handle_enemy_turns()
             self.update_fov()
 
     def update_fov(self) -> None:
