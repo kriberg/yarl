@@ -1,0 +1,69 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .engine import Engine
+    from .entity import Entity
+
+from typing import override
+
+
+class Action(object):
+    def perform(self, engine: Engine, entity: Entity) -> None:
+        raise NotImplementedError()
+
+
+class EscapeAction(Action):
+    @override
+    def perform(self, engine: Engine, entity: Entity) -> None:
+        raise SystemExit()
+
+
+class ActionWithDirection(Action):
+    def __init__(self, dx: int, dy: int) -> None:
+        super().__init__()
+        self.dx: int = dx
+        self.dy: int = dy
+
+    @override
+    def perform(self, engine: Engine, entity: Entity) -> None:
+        raise NotImplementedError()
+
+
+class MeleeAction(ActionWithDirection):
+    @override
+    def perform(self, engine: Engine, entity: Entity) -> None:
+        dest_x = entity.x + self.dx
+        dest_y = entity.y + self.dy
+        target = engine.game_map.get_block_entity_at_location(dest_x, dest_y)
+        if not target:
+            return
+        print(f"You kick the {target.name}, much to its annoyance!")
+
+
+class MovementAction(ActionWithDirection):
+    @override
+    def perform(self, engine: Engine, entity: Entity) -> None:
+        dest_x = entity.x + self.dx
+        dest_y = entity.y + self.dy
+
+        if not engine.game_map.in_bounds(dest_x, dest_y):
+            return
+        if not engine.game_map.tiles["walkable"][dest_x, dest_y]:
+            return
+        if engine.game_map.get_block_entity_at_location(dest_x, dest_y):
+            return
+        entity.move(self.dx, self.dy)
+
+
+class BumpAction(ActionWithDirection):
+    @override
+    def perform(self, engine: Engine, entity: Entity) -> None:
+        dest_x = entity.x + self.dx
+        dest_y = entity.y + self.dy
+
+        if engine.game_map.get_block_entity_at_location(dest_x, dest_y):
+            return MeleeAction(self.dx, self.dy).perform(engine, entity)
+        else:
+            return MovementAction(self.dx, self.dy).perform(engine, entity)
