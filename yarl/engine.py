@@ -1,38 +1,31 @@
-from typing import Any, Iterable
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 from tcod.console import Console
 from tcod.context import Context
 from tcod.map import compute_fov
 
-from .entity import Entity
-from .game_map import GameMap
 from .input_handlers import EventHandler
+
+if TYPE_CHECKING:
+    from .entity import Entity
+    from .game_map import GameMap
 
 
 class Engine(object):
+    game_map: GameMap
+
     def __init__(
         self,
-        event_handler: EventHandler,
-        game_map: GameMap,
         player: Entity,
     ) -> None:
-        self.event_handler: EventHandler = event_handler
-        self.game_map: GameMap = game_map
+        self.event_handler: EventHandler = EventHandler(self)
         self.player: Entity = player
 
     def handle_enemy_turns(self) -> None:
         for entity in self.game_map.entities - {self.player}:
             print(f"The {entity.name} ponders life")
-
-    def handle_events(self, events: Iterable[Any]) -> None:
-        for event in events:
-            action = self.event_handler.dispatch(event)
-
-            if action is None:
-                continue
-            action.perform(self, self.player)
-            self.handle_enemy_turns()
-            self.update_fov()
 
     def update_fov(self) -> None:
         self.game_map.visible[:] = compute_fov(

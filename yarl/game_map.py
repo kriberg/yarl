@@ -4,6 +4,7 @@ from collections.abc import Iterable
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from .engine import Engine
     from .entity import Entity
 import numpy as np  # type: ignore
 from tcod.console import Console
@@ -12,7 +13,10 @@ from . import tile_types
 
 
 class GameMap(object):
-    def __init__(self, width: int, height: int, entities: Iterable[Entity] = ()):
+    def __init__(
+        self, engine: Engine, width: int, height: int, entities: Iterable[Entity] = ()
+    ):
+        self.engine = engine
         self.width, self.height = width, height
         self.tiles = np.full((width, height), fill_value=tile_types.wall, order="F")
         self.visible = np.full((width, height), fill_value=False, order="F")
