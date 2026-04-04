@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .engine import Engine
-    from .entity import Entity
+    from .entity import Actor, Entity
 
 from typing import override
 
@@ -12,9 +12,9 @@ from .types import Point
 
 
 class Action(object):
-    def __init__(self, entity: Entity) -> None:
+    def __init__(self, entity: Actor) -> None:
         super().__init__()
-        self.entity = entity
+        self.entity: Actor = entity
 
     @property
     def engine(self) -> Engine:
@@ -30,8 +30,14 @@ class EscapeAction(Action):
         raise SystemExit()
 
 
+class WaitAction(Action):
+    @override
+    def perform(self) -> None:
+        pass
+
+
 class ActionWithDirection(Action):
-    def __init__(self, entity: Entity, dx: int, dy: int) -> None:
+    def __init__(self, entity: Actor, dx: int, dy: int) -> None:
         super().__init__(entity)
         self.dx: int = dx
         self.dy: int = dy
@@ -44,6 +50,10 @@ class ActionWithDirection(Action):
     def blocking_entity(self) -> Entity | None:
         return self.engine.game_map.get_block_entity_at_location(*self.dest_xy)
 
+    @property
+    def target_actor(self) -> Actor | None:
+        return self.engine.game_map.get_actor_at_location(*self.dest_xy)
+
     @override
     def perform(self) -> None:
         raise NotImplementedError()
@@ -52,10 +62,17 @@ class ActionWithDirection(Action):
 class MeleeAction(ActionWithDirection):
     @override
     def perform(self) -> None:
-        target = self.blocking_entity
+        target = self.target_actor
         if not target:
             return
-        print(f"You kick the {target.name}, much to its annoyance!")
+        damage = self.entity.fighter.power - target.fighter.defense
+
+        attack_desc = f"{self.entity.name.capitalize()} attacks {target.name}"
+        if damage > 0:
+            print(f"{attack_desc} for {damage} hit points.")
+            target.fighter.hp -= damage
+        else:
+            print(f"{attack_desc} for no damage.")
 
 
 class MovementAction(ActionWithDirection):
@@ -75,7 +92,7 @@ class MovementAction(ActionWithDirection):
 class BumpAction(ActionWithDirection):
     @override
     def perform(self) -> None:
-        if self.blocking_entity:
+        if self.target_actor:
             return MeleeAction(self.entity, self.dx, self.dy).perform()
         else:
             return MovementAction(self.entity, self.dx, self.dy).perform()

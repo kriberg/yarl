@@ -5,23 +5,32 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .engine import Engine
-    from .entity import Entity
 import numpy as np  # type: ignore
 from tcod.console import Console
 
 from . import tile_types
+from .entity import Actor, Entity
 
 
 class GameMap(object):
     def __init__(
         self, engine: Engine, width: int, height: int, entities: Iterable[Entity] = ()
     ):
-        self.engine = engine
-        self.width, self.height = width, height
+        self.engine: Engine = engine
+        self.width: int = width
+        self.height: int = height
         self.tiles = np.full((width, height), fill_value=tile_types.wall, order="F")
         self.visible = np.full((width, height), fill_value=False, order="F")
         self.explored = np.full((width, height), fill_value=False, order="F")
         self.entities: set[Entity] = set(entities)
+
+    @property
+    def actors(self) -> Iterable[Actor]:
+        yield from (
+            entity
+            for entity in self.entities
+            if isinstance(entity, Actor) and entity.is_alive
+        )
 
     def get_block_entity_at_location(
         self, location_x: int, location_y: int
@@ -35,6 +44,12 @@ class GameMap(object):
                 return entity
         return None
 
+    def get_actor_at_location(self, x: int, y: int) -> Actor | None:
+        for actor in self.actors:
+            if actor.x == x and actor.y == y:
+                return actor
+        return None
+
     def in_bounds(self, x: int, y: int) -> bool:
         return 0 <= x < self.width and 0 <= y < self.height
 
@@ -44,6 +59,11 @@ class GameMap(object):
             choicelist=[self.tiles["light"], self.tiles["dark"]],
             default=tile_types.SHROUD,
         )
-        for entity in self.entities:
+        entities_sorted_for_rendering = sorted(
+            self.entities, key=lambda x: x.render_order.value
+        )
+        for entity in entities_sorted_for_rendering:
             if self.visible[entity.x, entity.y]:
-                _ = console.print(entity.x, entity.y, entity.char, fg=entity.color)
+                _ = console.print(
+                    x=entity.x, y=entity.y, text=entity.char, fg=entity.color
+                )
