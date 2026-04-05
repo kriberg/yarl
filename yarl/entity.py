@@ -15,11 +15,11 @@ T = TypeVar("T", bound="Entity")
 
 
 class Entity(object):
-    game_map: GameMap
+    parent: GameMap
 
     def __init__(
         self,
-        game_map: GameMap | None = None,
+        parent: GameMap | None = None,
         x: int = 0,
         y: int = 0,
         char: str = "?",
@@ -35,9 +35,13 @@ class Entity(object):
         self.name: str = name
         self.blocks_movement: bool = blocks_movement
         self.render_order: RenderOrder = render_order
-        if game_map:
-            self.game_map = game_map
-            game_map.entities.add(self)
+        if parent:
+            self.parent = parent
+            parent.entities.add(self)
+
+    @property
+    def game_map(self) -> GameMap:
+        return self.parent.game_map
 
     def move(self, dx: int, dy: int) -> None:
         self.x += dx
@@ -47,7 +51,7 @@ class Entity(object):
         clone = copy.deepcopy(self)
         clone.x = x
         clone.y = y
-        clone.game_map = game_map
+        clone.parent = game_map
         game_map.entities.add(clone)
         return clone
 
@@ -55,9 +59,10 @@ class Entity(object):
         self.x = x
         self.y = y
         if game_map:
-            if hasattr(self, "game_map"):
-                self.game_map.entites.remove(self)
-            self.game_map = game_map
+            if hasattr(self, "parent"):
+                if self.parent is self.game_map:
+                    self.game_map.entites.remove(self)
+            self.parent = game_map
             game_map.entities.add(self)
 
 
@@ -84,7 +89,7 @@ class Actor(Entity):
         )
         self.ai: BaseAI | None = ai_cls(self)
         self.fighter: Fighter = fighter
-        self.fighter.entity = self
+        self.fighter.parent = self
 
     @property
     def is_alive(self) -> bool:

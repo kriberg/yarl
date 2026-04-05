@@ -32,6 +32,10 @@ class GameMap(object):
             if isinstance(entity, Actor) and entity.is_alive
         )
 
+    @property
+    def game_map(self) -> GameMap:
+        return self
+
     def get_block_entity_at_location(
         self, location_x: int, location_y: int
     ) -> Entity | None:
