@@ -21,7 +21,7 @@ class Message(object):
 
 
 class MessageLog(object):
-    def __init__(self) -> none:
+    def __init__(self) -> None:
         self.messages: list[Message] = []
 
     def add_message(
