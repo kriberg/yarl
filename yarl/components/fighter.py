@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from .. import colors
 from ..input_handlers import GameOverEventHandler
 from ..render_order import RenderOrder
 from .base_component import BaseComponent
@@ -32,9 +33,11 @@ class Fighter(BaseComponent):
     def die(self) -> None:
         if self.engine.player is self.entity:
             death_message = "You died!"
+            death_message_color = colors.PLAYER_DIE
             self.engine.event_handler = GameOverEventHandler(self.engine)
         else:
             death_message = f"{self.entity.name} died!"
+            death_message_color = colors.ENEMY_DIE
 
         self.entity.char = "%"
         self.entity.color = (191, 0, 0)
@@ -42,4 +45,4 @@ class Fighter(BaseComponent):
         self.entity.ai = None
         self.entity.name = f"Remains of {self.entity.name}"
         self.entity.render_order = RenderOrder.CORPSE
-        print(death_message)
+        self.engine.message_log.add_message(death_message, death_message_color)

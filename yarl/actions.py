@@ -8,6 +8,7 @@ if TYPE_CHECKING:
 
 from typing import override
 
+from . import colors
 from .types import Point
 
 
@@ -68,11 +69,19 @@ class MeleeAction(ActionWithDirection):
         damage = self.entity.fighter.power - target.fighter.defense
 
         attack_desc = f"{self.entity.name.capitalize()} attacks {target.name}"
+        if self.entity is self.engine.player:
+            attack_color = colors.PLAYER_ATK
+        else:
+            attack_color = colors.ENEMY_ATK
         if damage > 0:
-            print(f"{attack_desc} for {damage} hit points.")
+            self.engine.message_log.add_message(
+                f"{attack_desc} for {damage} hit points.", attack_color
+            )
             target.fighter.hp -= damage
         else:
-            print(f"{attack_desc} for no damage.")
+            self.engine.message_log.add_message(
+                f"{attack_desc} for no damage.", attack_color
+            )
 
 
 class MovementAction(ActionWithDirection):

@@ -3,10 +3,12 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from tcod.console import Console
-from tcod.context import Context
 from tcod.map import compute_fov
 
 from .input_handlers import MainGameEventHandler
+from .message_log import MessageLog
+from .render_functions import render_bar, render_names_at_mouse_location
+from .types import Point
 
 if TYPE_CHECKING:
     from .entity import Actor
@@ -22,7 +24,9 @@ class Engine(object):
         player: Actor,
     ) -> None:
         self.event_handler: EventHandler = MainGameEventHandler(self)
+        self.message_log = MessageLog()
         self.player: Actor = player
+        self.mouse_location: Point = (0, 0)
 
     def handle_enemy_turns(self) -> None:
         for entity in set(self.game_map.actors) - {self.player}:
@@ -37,12 +41,13 @@ class Engine(object):
         )
         self.game_map.explored |= self.game_map.visible
 
-    def render(self, console: Console, context: Context) -> None:
+    def render(self, console: Console) -> None:
         self.game_map.render(console)
-        _ = console.print(
-            x=1,
-            y=47,
-            text=f"HP: {self.player.fighter.hp}/{self.player.fighter.max_hp}",
+        self.message_log.render(console=console, x=21, y=45, width=40, height=5)
+        render_bar(
+            console=console,
+            current_value=self.player.fighter.hp,
+            maximum_value=self.player.fighter.max_hp,
+            total_width=20,
         )
-        context.present(console)
-        console.clear()
+        render_names_at_mouse_location(console=console, x=21, y=44, engine=self)
