@@ -9,7 +9,7 @@ import numpy as np  # type: ignore
 from tcod.console import Console
 
 from . import tile_types
-from .entity import Actor, Entity
+from .entity import Actor, Entity, Item
 
 
 class GameMap(object):
@@ -35,6 +35,10 @@ class GameMap(object):
     @property
     def game_map(self) -> GameMap:
         return self
+
+    @property
+    def items(self) -> Iterable[Item]:
+        yield from (entity for entity in self.entities if isinstance(entity, Item))
 
     def get_block_entity_at_location(
         self, location_x: int, location_y: int

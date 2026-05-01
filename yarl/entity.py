@@ -3,19 +3,22 @@ from __future__ import annotations
 import copy
 from typing import TYPE_CHECKING, TypeVar
 
+from . import colors
 from .render_order import RenderOrder
 from .types import RGB
 
 if TYPE_CHECKING:
     from .components.ai import BaseAI
+    from .components.consumable import Consumable
     from .components.fighter import Fighter
+    from .components.inventory import Inventory
     from .game_map import GameMap
 
 T = TypeVar("T", bound="Entity")
 
 
 class Entity(object):
-    parent: GameMap
+    parent: GameMap | Inventory
 
     def __init__(
         self,
@@ -23,7 +26,7 @@ class Entity(object):
         x: int = 0,
         y: int = 0,
         char: str = "?",
-        color: RGB = (255, 255, 255),
+        color: RGB = colors.WHITE,
         name: str = "<Unnamed>",
         blocks_movement: bool = False,
         render_order: RenderOrder = RenderOrder.CORPSE,
@@ -73,10 +76,11 @@ class Actor(Entity):
         x: int = 0,
         y: int = 0,
         char: str = "?",
-        color: RGB = (255, 255, 255),
+        color: RGB = colors.WHITE,
         name: str = "<Unnamed>",
         ai_cls: type[BaseAI],
         fighter: Fighter,
+        inventory: Inventory,
     ) -> None:
         super().__init__(
             x=x,
@@ -91,6 +95,34 @@ class Actor(Entity):
         self.fighter: Fighter = fighter
         self.fighter.parent = self
 
+        self.inventory = inventory
+        self.inventory.parent = self
+
     @property
     def is_alive(self) -> bool:
         return bool(self.ai)
+
+
+class Item(Entity):
+    def __init__(
+        self,
+        *,
+        x: int = 0,
+        y: int = 0,
+        char: str = "?",
+        color: RGB = colors.WHITE,
+        name: str = "<Unnamed>",
+        consumable: Consumable,
+    ) -> None:
+        super().__init__(
+            x=x,
+            y=y,
+            char=char,
+            color=color,
+            name=name,
+            blocks_movement=False,
+            render_order=RenderOrder.ITEM,
+        )
+
+        self.consumable = consumable
+        self.consumable.parent = self
